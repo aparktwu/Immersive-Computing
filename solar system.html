@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+    <script>
+      AFRAME.registerComponent('sun-color-cycle', {
+        init: function () {
+          this.colors = ['#FDB813', '#FF6600', '#FF0000', '#FFD700', '#FF4500'];
+          this.index = 0;
+          this.el.setAttribute('material', 'color', this.colors[0]);
+        },
+        tick: function (time, delta) {
+          if (!this.lastSwitch) this.lastSwitch = time;
+          if (time - this.lastSwitch > 1500) {
+            this.index = (this.index + 1) % this.colors.length;
+            this.el.setAttribute('material', 'color', this.colors[this.index]);
+            this.lastSwitch = time;
+          }
+        }
+      });
+
+      AFRAME.registerComponent('orbit', {
+        schema: {
+          radius:  { type: 'number', default: 5 },
+          speed:   { type: 'number', default: 1 },
+          offset:  { type: 'number', default: 0 }
+        },
+        tick: function (time) {
+          const angle = (time * 0.001 * this.data.speed) + this.data.offset;
+          const x = Math.cos(angle) * this.data.radius;
+          const z = Math.sin(angle) * this.data.radius;
+          this.el.setAttribute('position', { x: x, y: 0, z: z });
+        }
+      });
+
+      AFRAME.registerComponent('moon-orbit', {
+        schema: {
+          earthRadius: { type: 'number', default: 6 },
+          earthSpeed:  { type: 'number', default: 1.0 },
+          earthOffset: { type: 'number', default: 2 },
+          moonRadius:  { type: 'number', default: 0.6 },
+          moonSpeed:   { type: 'number', default: 4 }
+        },
+        tick: function (time) {
+          const t = time * 0.001;
+          const earthAngle = (t * this.data.earthSpeed) + this.data.earthOffset;
+          const ex = Math.cos(earthAngle) * this.data.earthRadius;
+          const ez = Math.sin(earthAngle) * this.data.earthRadius;
+          const moonAngle = t * this.data.moonSpeed;
+          const mx = ex + Math.cos(moonAngle) * this.data.moonRadius;
+          const mz = ez + Math.sin(moonAngle) * this.data.moonRadius;
+          this.el.setAttribute('position', { x: mx, y: 0, z: mz });
+        }
+      });
+
+      AFRAME.registerComponent('planet-label', {
+        schema: { name: { type: 'string', default: '' } },
+        init: function () {
+          const label = document.createElement('a-text');
+          label.setAttribute('value', this.data.name);
+          label.setAttribute('align', 'center');
+          label.setAttribute('color', '#ffffff');
+          label.setAttribute('width', '3');
+          label.setAttribute('position', '0 0.6 0');
+          this.el.appendChild(label);
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene>
+
+      <a-sky color="#000010"></a-sky>
+
+      <a-light type="ambient" color="#ffffff" intensity="2"></a-light>
+      <a-light type="point" color="#FDB813" intensity="3" position="0 0 0"></a-light>
+
+      <!-- Sun -->
+      <a-sphere id="sun"
+        position="0 0 0"
+        radius="1.5"
+        material="shader: flat; color: #FDB813"
+        sun-color-cycle
+        planet-label="name: Sun"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
+      </a-sphere>
+
+      <!-- Mercury - gray -->
+      <a-sphere
+        radius="0.15"
+        material="shader: flat; color: #b5b5b5"
+        orbit="radius: 3; speed: 1.6; offset: 0"
+        planet-label="name: Mercury"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 4000">
+      </a-sphere>
+
+      <!-- Venus - pale yellow -->
+      <a-sphere
+        radius="0.25"
+        material="shader: flat; color: #e8cda0"
+        orbit="radius: 4.5; speed: 1.17; offset: 1"
+        planet-label="name: Venus"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 6000">
+      </a-sphere>
+
+      <!-- Earth - blue -->
+      <a-sphere
+        radius="0.28"
+        material="shader: flat; color: #1a6fa8"
+        orbit="radius: 6; speed: 1.0; offset: 2"
+        planet-label="name: Earth"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 5000">
+      </a-sphere>
+
+      <!-- Moon - light gray -->
+      <a-sphere
+        radius="0.08"
+        material="shader: flat; color: #cccccc"
+        moon-orbit="earthRadius: 6; earthSpeed: 1.0; earthOffset: 2; moonRadius: 0.5; moonSpeed: 4">
+      </a-sphere>
+
+      <!-- Mars - red -->
+      <a-sphere
+        radius="0.2"
+        material="shader: flat; color: #c1440e"
+        orbit="radius: 7.5; speed: 0.8; offset: 3"
+        planet-label="name: Mars"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 7000">
+      </a-sphere>
+
+      <!-- Rings around Mars -->
+      <a-entity orbit="radius: 7.5; speed: 0.8; offset: 3">
+        <a-torus
+          radius="0.35"
+          tube="0.05"
+          rotation="90 0 0"
+          material="shader: flat; color: #c2a16e; transparent: true; opacity: 0.8">
+        </a-torus>
+      </a-entity>
+
+      <!-- Camera -->
+      <a-entity position="0 2 12">
+        <a-camera wasd-controls-enabled="true" look-controls>
+          <a-cursor></a-cursor>
+        </a-camera>
+      </a-entity>
+
+    </a-scene>
+  </body>
+</html>
